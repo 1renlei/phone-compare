@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机配置对比 - Phone Compare</title>
+    <!-- Font Awesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ========== 全局样式重置 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 主题色彩变量 */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --card-hover: rgba(255, 255, 255, 0.15);
+            --success-color: #00d4aa;
+            --warning-color: #ff6b6b;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --accent-pink: #ec4899;
+            --accent-cyan: #06b6d4;
+            --accent-orange: #f59e0b;
+            --accent-green: #10b981;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* 背景装饰粒子 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.1) 0%, transparent 30%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ========== 头部样式 ========== */
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .header-icon {
+            font-size: 3rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        /* ========== 选择区域样式 ========== */
+        #selection-view {
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        #selection-view.hidden {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+        }
+
+        .section-title {
+            text-align: center;
+            margin: 30px 0 20px;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 3px;
+            background: var(--primary-gradient);
+            margin: 10px auto 0;
+            border-radius: 2px;
+        }
+
+        /* 手机网格布局 */
+        .phone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            padding: 20px 0;
+        }
+
+        /* 手机卡片 - 新拟态/毛玻璃效果 */
+        .phone-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px 20px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .phone-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            background: var(--card-hover);
+            box-shadow: var(--glass-shadow);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .phone-card:hover::before {
+            opacity: 1;
+        }
+
+        .phone-card.selected {
+            border-color: var(--success-color);
+            background: rgba(0, 212, 170, 0.15);
+            box-shadow: 0 0 30px rgba(0, 212, 170, 0.3);
+        }
+
+        .phone-card.selected::before {
+            opacity: 1;
+            background: linear-gradient(90deg, var(--success-color), #00ff88);
+        }
+
+        /* 选中标记 */
+        .check-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            background: var(--success-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .phone-card.selected .check-badge {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .check-badge i {
+            color: white;
+            font-size: 14px;
+        }
+
+        /* 手机图片容器 */
+        .phone-image-container {
+            width: 100%;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+            border-radius: 15px;
+            padding: 15px;
+        }
+
+        .phone-image-container img {
+            max-width: 100%;
+            max-height: 180px;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+        }
+
+        .phone-card:hover .phone-image-container img {
+            transform: scale(1.08);
+        }
+
+        /* 手机信息 */
+        .phone-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .phone-brand {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .phone-brief {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .phone-brief span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .phone-brief i {
+            color: var(--accent-cyan);
+        }
+
+        /* ========== 操作按钮区域 ========== */
+        .action-bar {
+            text-align: center;
+            padding: 30px 0;
+            position: sticky;
+            bottom: 20px;
+            z-index: 100;
+        }
+
+        .btn {
+            padding: 15px 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: white;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: var(--card-hover);
+            transform: translateY(-3px);
+        }
+
+        .selection-count {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .selection-count span {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        /* ========== 提示消息 ========== */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(255, 107, 107, 0.95);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 500;
+            z-index: 1000;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ========== 对比视图样式 ========== */
+        #comparison-view {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #comparison-view.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .comparison-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .comparison-header h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* 对比容器 */
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 对比卡片 */
+        .comparison-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .comparison-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .comparison-card.phone1::before {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-blue));
+        }
+
+        .comparison-card.phone2::before {
+            background: linear-gradient(90deg, var(--accent-pink), var(--accent-orange));
+        }
+
+        .comparison-phone-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .comparison-phone-image {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 15px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .comparison-phone-image img {
+            max-width: 100%;
+            max-height: 120px;
+            object-fit: contain;
+        }
+
+        .comparison-phone-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .comparison-phone-brand {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* 规格项 */
+        .spec-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .spec-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--glass-border);
+            transform: translateX(5px);
+        }
+
+        .spec-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .spec-icon.chip { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .spec-icon.battery { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+        .spec-icon.screen { background: linear-gradient(135deg, #10b981, #06b6d4); }
+        .spec-icon.value { background: linear-gradient(135deg, #ec4899, #8b5cf6); }
+        .spec-icon.ip { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+        .spec-icon.os { background: linear-gradient(135deg, #22c55e, #10b981); }
+
+        .spec-info {
+            flex: 1;
+        }
+
+        .spec-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+
+        .spec-value {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .spec-value.highlight {
+            color: var(--success-color);
+        }
+
+        /* 性价比分数 */
+        .value-score {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .score-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .score-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* ========== 购置建议区域 ========== */
+        .purchase-advice {
+            margin-top: 40px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 35px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .purchase-advice::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-green), var(--accent-purple));
+        }
+
+        .advice-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .advice-header h3 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .advice-header i {
+            color: var(--accent-cyan);
+        }
+
+        .advice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .advice-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+
+        .advice-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .advice-card.gaming {
+            border-left-color: var(--accent-purple);
+        }
+
+        .advice-card.battery {
+            border-left-color: var(--accent-green);
+        }
+
+        .advice-card.camera {
+            border-left-color: var(--accent-pink);
+        }
+
+        .advice-card.display {
+            border-left-color: var(--accent-blue);
+        }
+
+        .advice-card.value {
+            border-left-color: var(--accent-orange);
+        }
+
+        .advice-card h4 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .advice-card p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .advice-winner {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        /* 返回按钮 */
+        .back-button {
+            text-align: center;
+            margin-top: 30px;
+            padding-bottom: 20px;
+        }
+
+        /* ========== 响应式设计 ========== */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .phone-grid {
+                grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                gap: 15px;
+            }
+
+            .phone-card {
+                padding: 20px 15px;
+            }
+
+            .btn {
+                padding: 12px 35px;
+                font-size: 1rem;
+            }
+
+            .comparison-card {
+                padding: 20px;
+            }
+
+            .advice-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            header {
+                padding: 25px 15px;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .phone-image-container {
+                height: 150px;
+            }
+
+            .spec-item {
+                padding: 12px 15px;
+            }
+
+            .spec-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
+            }
+        }
+
+        /* ========== 动画 ========== */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .phone-card {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .phone-card:nth-child(1) { animation-delay: 0.1s; }
+        .phone-card:nth-child(2) { animation-delay: 0.2s; }
+        .phone-card:nth-child(3) { animation-delay: 0.3s; }
+        .phone-card:nth-child(4) { animation-delay: 0.4s; }
+        .phone-card:nth-child(5) { animation-delay: 0.5s; }
+        .phone-card:nth-child(6) { animation-delay: 0.6s; }
+
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <!-- 提示消息 -->
+    <div class="toast" id="toast">最多只能对比2款手机</div>
+
+    <div class="container">
+        <!-- 头部 -->
+        <header>
+            <div class="header-icon">
+                <i class="fas fa-mobile-screen"></i>
+            </div>
+            <h1>手机配置对比</h1>
+            <p>选择两款手机，了解详细配置差异与购置建议</p>
+        </header>
+
+        <!-- 选择视图 -->
+        <div id="selection-view">
+            <h2 class="section-title"><i class="fas fa-th-large"></i> 选择手机</h2>
+
+            <div class="phone-grid" id="phoneGrid">
+                <!-- 手机卡片将通过JavaScript动态生成 -->
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-bar">
+                <div class="selection-count">
+                    已选择 <span id="selectedCount">0</span> / 2 部手机
+                </div>
+                <button class="btn btn-primary" id="compareBtn" disabled>
+                    <i class="fas fa-chart-bar"></i>
+                    开始对比
+                </button>
+            </div>
+        </div>
+
+        <!-- 对比视图 -->
+        <div id="comparison-view">
+            <div class="comparison-header">
+                <h2><i class="fas fa-balance-scale"></i> 配置对比</h2>
+                <p id="comparisonSubtitle">详细规格对比与购置建议</p>
+            </div>
+
+            <div class="comparison-container" id="comparisonContainer">
+                <!-- 对比卡片将通过JavaScript动态生成 -->
+            </div>
+
+            <!-- 购置建议 -->
+            <div class="purchase-advice" id="purchaseAdvice">
+                <div class="advice-header">
+                    <h3><i class="fas fa-lightbulb"></i> 购置建议</h3>
+                </div>
+                <div class="advice-grid" id="adviceGrid">
+                    <!-- 建议将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <div class="back-button">
+                <button class="btn btn-secondary" id="backBtn">
+                    <i class="fas fa-arrow-left"></i> 返回重新选择
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 手机数据 (基于网络搜索的真实数据) ==========
+        const phonesData = [
+            {
+                id: 1,
+                name: "iPhone 17 Pro",
+                brand: "Apple",
+                chip: "A19 Pro",
+                chipDetail: "第三代3nm工艺，6核CPU+6核GPU",
+                battery: "3998 mAh",
+                batteryDetail: "支持30W有线快充",
+                screen: "6.3英寸",
+                screenDetail: "Super Retina XDR OLED，120Hz ProMotion",
+                valueScore: 8.8,
+                price: "¥8999起",
+                ipRating: "IP68/IP68",
+                os: "iOS 19",
+                image: "https://i.postimg.cc/SsvYkKBc/e2cc25cad4edc8c1bc165514122e1474.jpg",
+                color: "#a855f7"
+            },
+            {
+                id: 2,
+                name: "小米17 Ultra",
+                brand: "Xiaomi",
+                chip: "骁龙8 Elite Gen 5",
+                chipDetail: "台积电3nm工艺，Oryon CPU架构",
+                battery: "6800 mAh",
+                batteryDetail: "120W有线快充 + 80W无线快充",
+                screen: "6.9英寸",
+                screenDetail: "2K AMOLED，120Hz刷新率",
+                valueScore: 9.2,
+                price: "¥7999起",
+                ipRating: "IP68/IP68",
+                os: "小米澎湃OS 3(等效于安卓16)",
+                image: "https://i.postimg.cc/QNKvDy5r/862d2f5d3ecb4be75d080d6b8021c9fe.jpg",
+                color: "#f59e0b"
+            },
+            {
+                id: 3,
+                name: "三星Galaxy S26 Ultra",
+                brand: "Samsung",
+                chip: "骁龙8 Elite Gen 5 for Galaxy",
+                chipDetail: "专属优化版本，最高3.36GHz",
+                battery: "5000 mAh",
+                batteryDetail: "45W有线快充 + 15W无线快充",
+                screen: "6.8英寸",
+                screenDetail: "Dynamic AMOLED 2X，120Hz",
+                valueScore: 8.5,
+                price: "¥9699起",
+                ipRating: "IP68/IP68",
+                os: "Android 17",
+                image: "https://i.postimg.cc/x1vs8rT8/950e8f541b188849aaffcea13eb5c1e3.jpg",
+                color: "#3b82f6"
+            },
+            {
+                id: 4,
+                name: "荣耀WIN",
+                brand: "Honor",
+                chip: "骁龙8 至尊版",
+                chipDetail: "第五代骁龙8，游戏优化引擎",
+                battery: "10000 mAh",
+                batteryDetail: "66W超级快充 + 液冷散热",
+                screen: "6.78英寸",
+                screenDetail: "LCD，185Hz超高刷新率",
+                valueScore: 9.5,
+                price: "¥3999起",
+                ipRating: "IP68/IP68",
+                os: "MagicOS 10(等效于安卓16)",
+                image: "https://i.postimg.cc/B66NmX5s/81e21cdec4674b230a447e14eb277647.jpg",
+                color: "#10b981"
+            },
+            {
+                id: 5,
+                name: "OPPO Find X9 Pro",
+                brand: "OPPO",
+                chip: "天玑9500",
+                chipDetail: "联发科旗舰芯片，4nm工艺",
+                battery: "7500 mAh",
+                batteryDetail: "100W SUPERVOOC闪充",
+                screen: "6.78英寸",
+                screenDetail: "AMOLED，120Hz LTPO自适应",
+                valueScore: 8.9,
+                price: "¥5999起",
+                ipRating: "IP69/IP68",
+                os: "ColorOS 16(等效于安卓16)",
+                image: "https://i.postimg.cc/7ZnpcJz7/80e7898b6f76e3c83efc1343a5501658.jpg",
+                color: "#ec4899"
+            },
+            {
+                id: 6,
+                name: "vivo X200 Ultra",
+                brand: "vivo",
+                chip: "骁龙8 Elite",
+                chipDetail: "高性能低功耗，全新ISP架构",
+                battery: "6000 mAh",
+                batteryDetail: "80W闪充 + 蓝海续航系统",
+                screen: "6.82英寸",
+                screenDetail: "2K+ LTPO BOE AMOLED，120Hz",
+                valueScore: 8.7,
+                price: "¥6499起",
+                ipRating: "IP69/IP68",
+                os: "OriginOS 6(等效于安卓16)",
+                image: "https://i.postimg.cc/y6JCdNMQ/c60142453e05f961ee593e0f0fa937d4.jpg",
+                color: "#06b6d4"
+            },
+            {
+                id: 7,
+                name: "红米K90 Pro Max",
+                brand: "Redmi",
+                chip: "骁龙8 Elite Gen 5",
+                chipDetail: "台积电3nm工艺，LPDDR5X+UFS 4.1",
+                battery: "7560 mAh",
+                batteryDetail: "100W有线快充 + 50W无线快充",
+                screen: "6.9英寸",
+                screenDetail: "2608×1200 OLED，120Hz，3D超声波指纹",
+                valueScore: 9.3,
+                price: "¥3999起",
+                ipRating: "IP68/IP68",
+                os: "小米澎湃OS 3(等效于安卓16)",
+                image: "https://i.postimg.cc/bvM6648Q/5b747e0daec37e3ae5cc9e022a656da5.jpg",
+                color: "#f59e0b"
+            },
+            {
+                id: 8,
+                name: "华为Mate 80",
+                brand: "Huawei",
+                chip: "麒麟9020",
+                chipDetail: "鸿蒙HarmonyOS 6.0，第二代昆仑玻璃",
+                battery: "5750 mAh",
+                batteryDetail: "66W有线快充 + 50W无线快充",
+                screen: "6.75英寸",
+                screenDetail: "2832×1280 OLED，1-120Hz LTPO，红枫影像",
+                valueScore: 9.0,
+                price: "¥4699起",
+                ipRating: "IP68/IP68",
+                os: "HarmonyOS 6(等效于安卓16)",
+                image: "https://i.postimg.cc/Bvdg5DcF/8b8339a685d269241ef460f299ec55d3.jpg",
+                color: "#10b981"
+            },
+            {
+                id: 9,
+                name: "荣耀Magic7 Pro",
+                brand: "Honor",
+                chip: "骁龙8 至尊版",
+                chipDetail: "4.32GHz超大核，Adreno 830 GPU",
+                battery: "5850 mAh",
+                batteryDetail: "100W有线快充 + 80W无线快充",
+                screen: "6.8英寸",
+                screenDetail: "1280×2800 OLED，1-120Hz LTPO，4320Hz PWM",
+                valueScore: 9.1,
+                price: "¥4699起",
+                ipRating: "IP68/IP68",
+                os: "MagicOS 9(等效于安卓15)",
+                image: "https://i.postimg.cc/xTt3xB3V/e256ccacc6445c2a1e66b17a0378ff17.jpg",
+            },
+            {
+                id: 10,
+                name: "红米K40",
+                brand: "Redmi",
+                chip: "骁龙870",
+                chipDetail: "7nm工艺，Adreno 650 GPU",
+                battery: "4520 mAh",
+                batteryDetail: "33W快充",
+                screen: "6.67英寸",
+                screenDetail: "2400×1080 AMOLED E4，120Hz",
+                valueScore: 7.5,
+                price: "¥1699起",
+                ipRating: "IP53/(无)",
+                os: "MIUI 12(等效于安卓11)",
+                image: "https://i.postimg.cc/85RhhYz9/5e9c2e8b734956db18a58234679e4041.jpg",
+                color: "#ef4444"
+            },
+            {
+                id: 11,
+                name: "魅族22",
+                brand: "Meizu",
+                chip: "骁龙8s Gen 4",
+                chipDetail: "4nm工艺，4.21GHz超高主频",
+                battery: "5510 mAh",
+                batteryDetail: "80W有线快充 + 66W无线快充",
+                screen: "6.3英寸",
+                screenDetail: "2670×1200 OLED，1-120Hz LTPO，1.2mm四等边",
+                valueScore: 8.8,
+                price: "¥2999起",
+                ipRating: "IP65/IP65",
+                os: "Flyme 11(等效于安卓16)",
+                image: "https://i.postimg.cc/ZnD03P6K/947c58e3a94eb6a0a0f4bb38c6ead926.jpg",
+                color: "#ec4899"
+            },
+            {
+                id: 12,
+                name: "魅族21",
+                brand: "Meizu",
+                chip: "骁龙8 Gen 3",
+                chipDetail: "台积电4nm工艺，Flyme 10.5系统",
+                battery: "4800 mAh",
+                batteryDetail: "80W快充，超声波指纹",
+                screen: "6.55英寸",
+                screenDetail: "2340×1080 OLED，120Hz，物理四等边",
+                valueScore: 8.3,
+                price: "¥2199起",
+                ipRating: "IP54/(无)",
+                os: "Flyme 10.5(等效于安卓14)",
+                image: "https://i.postimg.cc/rw4z0rsM/bfd2d6dfa53b484930e9cdb9613ed2b1.jpg",
+                color: "#f97316"
+            },
+            {
+                id: 13,
+                name: "荣耀Magic6 Pro",
+                brand: "Honor",
+                chip: "骁龙8 Gen 3",
+                chipDetail: "台积电4nm，第二代青海湖电池",
+                battery: "5450 mAh",
+                batteryDetail: "66W有线快充 + 50W无线快充",
+                screen: "6.8英寸",
+                screenDetail: "2800×1280 OLED，1-120Hz LTPO，4320Hz PWM",
+                valueScore: 8.9,
+                price: "¥3599起",
+                ipRating: "IP68/IP68",
+                os: "MagicOS 8(等效于安卓14)",
+                image: "https://i.postimg.cc/2yJ83kfB/0c3636f2d1deb5e16972e21b0d781500.jpg",
+                color: "#8b5cf6"
+            },
+            {
+                id: 14,
+                name: "荣耀Magic5 Pro",
+                brand: "Honor",
+                chip: "骁龙8 Gen 2",
+                chipDetail: "台积电4nm，荣耀C1射频芯片",
+                battery: "5450 mAh",
+                batteryDetail: "66W有线快充 + 50W无线快充",
+                screen: "6.81英寸",
+                screenDetail: "2848×1312 OLED，120Hz，2160Hz PWM",
+                valueScore: 8.4,
+                price: "¥2799起",
+                ipRating: "IP68/IP68",
+                os: "MagicOS 7.1(等效于安卓13)",
+                image: "https://i.postimg.cc/3NyYssDx/ac9ccf4b45916574f84c41530c819f2d.jpg",
+                color: "#7c3aed"
+            },
+            {
+                id: 15,
+                name: "红米K80至尊版",
+                brand: "Redmi",
+                chip: "骁龙8 Gen 3",
+                chipDetail: "台积电4nm，冰封散热系统",
+                battery: "6200 mAh",
+                batteryDetail: "90W快充",
+                screen: "6.67英寸",
+                screenDetail: "2712×1220 AMOLED，120Hz，青山护眼",
+                valueScore: 9.0,
+                price: "¥2599起",
+                ipRating: "IP66/IP66",
+                os: "小米澎湃OS 2(等效于安卓15)",
+                image: "https://i.postimg.cc/kXb7fdmK/ad99a731b81687076fbe8a6337a5b8f6.jpg",
+                color: "#f59e0b"
+            },
+            {
+                id: 16,
+                name: "小米15 Ultra",
+                brand: "Xiaomi",
+                chip: "骁龙8 至尊版",
+                chipDetail: "台积电3nm，第二代Oryon CPU",
+                battery: "6100 mAh",
+                batteryDetail: "90W有线快充 + 80W无线快充",
+                screen: "6.73英寸",
+                screenDetail: "3200×1440 2K AMOLED，120Hz，小米澎湃OS 2",
+                valueScore: 9.4,
+                price: "¥6499起",
+                ipRating: "IP68/IP68",
+                os: "小米澎湃OS 2(等效于安卓15)",
+                image: "https://i.postimg.cc/sXLR4TH0/809b7ff67019bf2b9a99a4fd18c30c89.jpg",
+                color: "#ef4444"
+            },
+            {
+                id: 17,
+                name: "小米14 Ultra",
+                brand: "Xiaomi",
+                chip: "骁龙8 Gen 3",
+                chipDetail: "台积电4nm，徕卡Summilux镜头",
+                battery: "5300 mAh",
+                batteryDetail: "90W有线快充 + 80W无线快充",
+                screen: "6.73英寸",
+                screenDetail: "3200×1440 2K AMOLED，120Hz，曲面屏",
+                valueScore: 9.1,
+                price: "¥5499起",
+                ipRating: "IP68/IP68",
+                os: "小米澎湃OS 2(等效于安卓15)",
+                image: "https://i.postimg.cc/1t8zSnLY/523443a9dab7b55902776313b5f6c07b.jpg",
+                color: "#dc2626"
+            },
+            {
+                id: 18,
+                name: "华为Mate 60 Pro",
+                brand: "Huawei",
+                chip: "麒麟9000S",
+                chipDetail: "鸿蒙HarmonyOS 4.0，第二代昆仑玻璃",
+                battery: "5000 mAh",
+                batteryDetail: "88W有线快充 + 50W无线快充",
+                screen: "6.82英寸",
+                screenDetail: "2720×1260 OLED，1-120Hz LTPO，玄武架构",
+                valueScore: 8.8,
+                price: "¥5499起",
+                ipRating: "IP68/IP68",
+                os: "HarmonyOS 4(等效于安卓12)",
+                image: "https://i.postimg.cc/h47G3m8D/b1d2456b759187b7fa8728e7c7a91525.jpg",
+                name: "小米MIX 4",
+                brand: "Xiaomi",
+                chip: "骁龙888 Plus",
+                chipDetail: "5nm工艺，CUP全面屏，屏下摄像头",
+                battery: "4500 mAh",
+                batteryDetail: "120W有线快充 + 50W无线快充",
+                screen: "6.67英寸",
+                screenDetail: "2400×1080 CUP全面屏，120Hz，一体化陶瓷机身",
+                valueScore: 7.8,
+                price: "¥2999起",
+                ipRating: "(无)/(无)",
+                os: "MIUI 12.5增强版(等效于安卓11)",
+                image: "https://i.postimg.cc/W43NmqbR/457d5fc3a8a050f9daa941921aefd8e0.jpg",
+                color: "#1f2937"
+            },
+            {
+                id: 20,
+                name: "红米Turbo 5 Max",
+                brand: "Redmi",
+                chip: "骁龙8s Gen 3",
+                chipDetail: "台积电4nm架构，狂暴引擎3.0",
+                battery: "9000 mAh",
+                batteryDetail: "100W快充 + 27W反向充电",
+                screen: "6.94英寸",
+                screenDetail: "2712×1220 LCD，120Hz，金刚护眼",
+                valueScore: 9.2,
+                price: "¥2199起",
+                ipRating: "IP68/IP65",
+                os: "小米澎湃OS 2(等效于安卓15)",
+                image: "https://i.postimg.cc/j2VRr86q/86e442d223ad225cb5e6718427dfdf41.jpg",
+                color: "#22c55e"
+            },
+            {
+                id: 21,
+                name: "红魔11 Pro+",
+                brand: "红魔",
+                chip: "第五代骁龙8至尊版",
+                chipDetail: "风水双冷散热系统，屏下摄像头",
+                battery: "7500 mAh",
+                batteryDetail: "120W快充 + 80W无线充电",
+                screen: "6.85英寸",
+                screenDetail: "2480×1116 真全面屏，屏下前摄，95.3%屏占比",
+                valueScore: 9.5,
+                price: "¥4499起",
+                ipRating: "(无)/(无)",
+                os: "RedMagic OS 10(等效于安卓16)",
+                image: "https://i.postimg.cc/5NSbZSXC/c0dd1847e04c012275793788d05bdac1.jpg",
+                color: "#dc2626"
+            },
+            {
+                id: 22,
+                name: "红魔10 Pro+",
+                brand: "红魔",
+                chip: "骁龙8 Gen 3",
+                chipDetail: "风冷散热系统，屏下摄像头",
+                battery: "7050 mAh",
+                batteryDetail: "120W快充",
+                screen: "6.78英寸",
+                screenDetail: "2480×1116 真全面屏，屏下前摄",
+                valueScore: 9.2,
+                price: "¥3599起",
+                ipRating: "(无)/(无)",
+                os: "RedMagic OS 10(等效于安卓16)",
+                image: "https://i.postimg.cc/s2vzGFw2/59e7acd356b3d1d49f6685422b005a87.jpg",
+                color: "#b91c1c"
+            },
+            {
+                id: 23,
+                name: "红米K70至尊版",
+                brand: "Redmi",
+                chip: "天玑9300+",
+                chipDetail: "狂暴游戏独显D1芯片，狂暴引擎3.0",
+                battery: "5500 mAh",
+                batteryDetail: "120W快充",
+                screen: "6.67英寸",
+                screenDetail: "2712×1220 1.5K直屏，144Hz，3840Hz PWM调光",
+                valueScore: 9.0,
+                price: "¥2599起",
+                ipRating: "IP68/IP68",
+                os: "小米澎湃OS 2(等效于安卓15)",
+                image: "https://i.postimg.cc/BbcffJQY/4e87f7503dcdf5e98477c9901c854399.jpg",
+                color: "#f59e0b"
+            },
+            {
+                id: 24,
+                name: "小米MIX 3",
+                brand: "Xiaomi",
+                chip: "骁龙845",
+                chipDetail: "磁动力滑盖全面屏，四曲面陶瓷机身",
+                battery: "3200 mAh",
+                batteryDetail: "18W快充，QC4.0+",
+                screen: "6.39英寸",
+                screenDetail: "2340×1080 三星AMOLED，全面屏，93.4%屏占比",
+                valueScore: 6.5,
+                price: "¥3299起",
+                ipRating: "(无)/(无)",
+                os: "MIUI 10(等效于安卓9)",
+                image: "https://i.postimg.cc/WpMvkw6y/d79dc1139cf02326fcd3c840654ad265.jpg",
+                color: "#1f2937"
+            }
+        ];
+
+        // ========== 状态管理 ==========
+        let selectedPhones = [];
+        const MAX_SELECTION = 2;
+
+        // ========== DOM 元素 ==========
+        const phoneGrid = document.getElementById('phoneGrid');
+        const selectedCountEl = document.getElementById('selectedCount');
+        const compareBtn = document.getElementById('compareBtn');
+        const selectionView = document.getElementById('selection-view');
+        const comparisonView = document.getElementById('comparison-view');
+        const comparisonContainer = document.getElementById('comparisonContainer');
+        const adviceGrid = document.getElementById('adviceGrid');
+        const backBtn = document.getElementById('backBtn');
+        const toast = document.getElementById('toast');
+
+        // ========== 渲染手机卡片 ==========
+        function renderPhoneCards() {
+            phoneGrid.innerHTML = phonesData.map(phone => `
+                <div class="phone-card" data-id="${phone.id}" onclick="toggleSelection(${phone.id})">
+                    <div class="check-badge">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="phone-image-container">
+                        <img src="${phone.image}" alt="${phone.name}"
+                             onerror="this.src='https://via.placeholder.com/200x300/667eea/ffffff?text=${encodeURIComponent(phone.name)}'">
+                    </div>
+                    <div class="phone-name">${phone.name}</div>
+                    <div class="phone-brand">${phone.brand}</div>
+                    <div class="phone-brief">
+                        <span><i class="fas fa-microchip"></i> ${phone.chip.split(' ')[0]}</span>
+                        <span><i class="fas fa-battery-full"></i> ${phone.battery.split(' ')[0]}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ========== 切换选择状态 ==========
+        function toggleSelection(phoneId) {
+            const phone = phonesData.find(p => p.id === phoneId);
+            const card = document.querySelector(`.phone-card[data-id="${phoneId}"]`);
+
+            const existingIndex = selectedPhones.findIndex(p => p.id === phoneId);
+
+            if (existingIndex > -1) {
+                // 取消选择
+                selectedPhones.splice(existingIndex, 1);
+                card.classList.remove('selected');
+            } else {
+                // 添加选择
+                if (selectedPhones.length >= MAX_SELECTION) {
+                    showToast();
+                    return;
+                }
+                selectedPhones.push(phone);
+                card.classList.add('selected');
+            }
+
+            updateUI();
+        }
+
+        // ========== 更新UI状态 ==========
+        function updateUI() {
+            selectedCountEl.textContent = selectedPhones.length;
+            compareBtn.disabled = selectedPhones.length !== MAX_SELECTION;
+        }
+
+        // ========== 显示提示消息 ==========
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
+        }
+
+        // ========== 开始对比 ==========
+        function startComparison() {
+            if (selectedPhones.length !== MAX_SELECTION) return;
+
+            selectionView.classList.add('hidden');
+
+            setTimeout(() => {
+                comparisonView.classList.add('active');
+                renderComparison();
+                renderAdvice();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 300);
+        }
+
+        // ========== 渲染对比视图 ==========
+        function renderComparison() {
+            const [phone1, phone2] = selectedPhones;
+
+            comparisonContainer.innerHTML = `
+                <div class="comparison-card phone1">
+                    <div class="comparison-phone-header">
+                        <div class="comparison-phone-image">
+                            <img src="${phone1.image}" alt="${phone1.name}"
+                                 onerror="this.src='https://via.placeholder.com/150x200/667eea/ffffff?text=${encodeURIComponent(phone1.name)}'">
+                        </div>
+                        <div class="comparison-phone-name">${phone1.name}</div>
+                        <div class="comparison-phone-brand">${phone1.brand}</div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon chip">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">芯片处理器</div>
+                            <div class="spec-value">${phone1.chip}</div>
+                            <div class="spec-value" style="font-size:0.85rem;color:var(--text-secondary)">${phone1.chipDetail}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon battery">
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">电池容量</div>
+                            <div class="spec-value">${phone1.battery}</div>
+                            <div class="spec-value" style="font-size:0.85rem;color:var(--text-secondary)">${phone1.batteryDetail}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon screen">
+                            <i class="fas fa-mobile-screen"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">屏幕规格</div>
+                            <div class="spec-value">${phone1.screen}</div>
+                            <div class="spec-value" style="font-size:0.85rem;color:var(--text-secondary)">${phone1.screenDetail}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon value">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">性价比评分</div>
+                            <div class="value-score">
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${phone1.valueScore * 10}%; background: linear-gradient(90deg, #ec4899, #8b5cf6);"></div>
+                                </div>
+                                <div class="score-number" style="color: var(--accent-pink);">${phone1.valueScore}/10</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon ip">
+                            <i class="fas fa-water"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">防尘防水</div>
+                            <div class="spec-value">${phone1.ipRating}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon os">
+                            <i class="fab fa-android"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">操作系统</div>
+                            <div class="spec-value">${phone1.os}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item" style="background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);">
+                        <div class="spec-info">
+                            <div class="spec-label">参考价格</div>
+                            <div class="spec-value" style="color: var(--success-color);">${phone1.price}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comparison-card phone2">
+                    <div class="comparison-phone-header">
+                        <div class="comparison-phone-image">
+                            <img src="${phone2.image}" alt="${phone2.name}"
+                                 onerror="this.src='https://via.placeholder.com/150x200/764ba2/ffffff?text=${encodeURIComponent(phone2.name)}'">
+                        </div>
+                        <div class="comparison-phone-name">${phone2.name}</div>
+                        <div class="comparison-phone-brand">${phone2.brand}</div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon chip">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">芯片处理器</div>
+                            <div class="spec-value">${phone2.chip}</div>
+                            <div class="spec-value" style="font-size:0.85rem;color:var(--text-secondary)">${phone2.chipDetail}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon battery">
+                            <i class="fas fa-battery-full"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">电池容量</div>
+                            <div class="spec-value">${phone2.battery}</div>
+                            <div class="spec-value" style="font-size:0.85rem;color:var(--text-secondary)">${phone2.batteryDetail}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon screen">
+                            <i class="fas fa-mobile-screen"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">屏幕规格</div>
+                            <div class="spec-value">${phone2.screen}</div>
+                            <div class="spec-value" style="font-size:0.85rem;color:var(--text-secondary)">${phone2.screenDetail}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon value">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">性价比评分</div>
+                            <div class="value-score">
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: ${phone2.valueScore * 10}%; background: linear-gradient(90deg, #f59e0b, #ef4444);"></div>
+                                </div>
+                                <div class="score-number" style="color: var(--accent-orange);">${phone2.valueScore}/10</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon ip">
+                            <i class="fas fa-water"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">防尘防水</div>
+                            <div class="spec-value">${phone2.ipRating}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item">
+                        <div class="spec-icon os">
+                            <i class="fab fa-android"></i>
+                        </div>
+                        <div class="spec-info">
+                            <div class="spec-label">操作系统</div>
+                            <div class="spec-value">${phone2.os}</div>
+                        </div>
+                    </div>
+
+                    <div class="spec-item" style="background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);">
+                        <div class="spec-info">
+                            <div class="spec-label">参考价格</div>
+                            <div class="spec-value" style="color: var(--success-color);">${phone2.price}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ========== 生成购置建议 ==========
+        function renderAdvice() {
+            const [phone1, phone2] = selectedPhones;
+
+            // 分析各项数据
+            const battery1 = parseInt(phone1.battery);
+            const battery2 = parseInt(phone2.battery);
+
+            const score1 = phone1.valueScore;
+            const score2 = phone2.valueScore;
+
+            const price1 = parseInt(phone1.price.replace(/[^0-9]/g, ''));
+            const price2 = parseInt(phone2.price.replace(/[^0-9]/g, ''));
+
+            const adviceItems = [];
+
+            // 游戏性能建议
+            const chip1Better = phone1.chip.includes('A19') || phone1.chip.includes('骁龙8 Elite');
+            const chip2Better = phone2.chip.includes('A19') || phone2.chip.includes('骁龙8 Elite');
+
+            if (chip1Better && !chip2Better) {
+                adviceItems.push({
+                    type: 'gaming',
+                    title: '<i class="fas fa-gamepad"></i> 游戏性能',
+                    content: `<span class="advice-winner">${phone1.name}</span> 芯片更强，采用先进工艺和优化架构，游戏中帧率更稳定，发热控制更好。`
+                });
+            } else if (chip2Better && !chip1Better) {
+                adviceItems.push({
+                    type: 'gaming',
+                    title: '<i class="fas fa-gamepad"></i> 游戏性能',
+                    content: `<span class="advice-winner">${phone2.name}</span> 芯片更强，游戏体验更流畅，大型3D游戏无压力。`
+                });
+            } else {
+                adviceItems.push({
+                    type: 'gaming',
+                    title: '<i class="fas fa-gamepad"></i> 游戏性能',
+                    content: '两款手机芯片性能相当，都能流畅运行主流手游，选择时可参考散热和屏幕刷新率。'
+                });
+            }
+
+            // 续航建议
+            if (battery1 > battery2) {
+                const diff = Math.round((battery1 - battery2) / battery2 * 100);
+                adviceItems.push({
+                    type: 'battery',
+                    title: '<i class="fas fa-battery-full"></i> 续航能力',
+                    content: `<span class="advice-winner">${phone1.name}</span> 电池容量更大(多${diff}%)，续航时间更长，适合重度用户。`
+                });
+            } else {
+                const diff = Math.round((battery2 - battery1) / battery1 * 100);
+                adviceItems.push({
+                    type: 'battery',
+                    title: '<i class="fas fa-battery-full"></i> 续航能力',
+                    content: `<span class="advice-winner">${phone2.name}</span> 电池容量更大(多${diff}%)，续航时间更长，适合重度用户。`
+                });
+            }
+
+            // 性价比建议
+            const value1 = score1 * 1000 / price1;
+            const value2 = score2 * 1000 / price2;
+
+            if (value1 > value2) {
+                adviceItems.push({
+                    type: 'value',
+                    title: '<i class="fas fa-tags"></i> 性价比',
+                    content: `<span class="advice-winner">${phone1.name}</span> 性价比更高，以更低的价格提供更强的综合配置。`
+                });
+            } else {
+                adviceItems.push({
+                    type: 'value',
+                    title: '<i class="fas fa-tags"></i> 性价比',
+                    content: `<span class="advice-winner">${phone2.name}</span> 性价比更高，以更低的价格提供更强的综合配置。`
+                });
+            }
+
+            // 拍照建议
+            if (phone1.brand === 'Apple' || phone1.brand === 'vivo' || phone1.brand === 'Xiaomi') {
+                adviceItems.push({
+                    type: 'camera',
+                    title: '<i class="fas fa-camera"></i> 影像系统',
+                    content: `<span class="advice-winner">${phone1.name}</span> 影像优化成熟，拍照算法出色，适合摄影爱好者。`
+                });
+            } else {
+                adviceItems.push({
+                    type: 'camera',
+                    title: '<i class="fas fa-camera"></i> 影像系统',
+                    content: `<span class="advice-winner">${phone2.name}</span> 影像优化成熟，拍照算法出色，适合摄影爱好者。`
+                });
+            }
+
+            // 屏幕建议
+            if (phone1.screen.includes('2K') || phone1.screen.includes('6.9') || phone1.screen.includes('6.82')) {
+                adviceItems.push({
+                    type: 'display',
+                    title: '<i class="fas fa-desktop"></i> 屏幕体验',
+                    content: `<span class="advice-winner">${phone1.name}</span> 屏幕更大更细腻，视觉体验更出色。`
+                });
+            } else {
+                adviceItems.push({
+                    type: 'display',
+                    title: '<i class="fas fa-desktop"></i> 屏幕体验',
+                    content: `<span class="advice-winner">${phone2.name}</span> 屏幕更大更细腻，视觉体验更出色。`
+                });
+            }
+
+            // 渲染建议卡片
+            adviceGrid.innerHTML = adviceItems.map(item => `
+                <div class="advice-card ${item.type}">
+                    <h4>${item.title}</h4>
+                    <p>${item.content}</p>
+                </div>
+            `).join('');
+        }
+
+        // ========== 返回选择视图 ==========
+        function goBack() {
+            comparisonView.classList.remove('active');
+
+            setTimeout(() => {
+                selectionView.classList.remove('hidden');
+                // 清空选择
+                selectedPhones = [];
+                document.querySelectorAll('.phone-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                updateUI();
+            }, 300);
+        }
+
+        // ========== 事件绑定 ==========
+        compareBtn.addEventListener('click', startComparison);
+        backBtn.addEventListener('click', goBack);
+
+        // ========== 初始化 ==========
+        renderPhoneCards();
+    </script>
+</body>
+</html>
