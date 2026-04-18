@@ -2626,18 +2626,54 @@
         backBtn.addEventListener('click', goBack);
 
         // ========== 用户系统 ==========
-        const USERS_KEY = 'phone_compare_users';
+        // ========== 在线数据库配置 ==========
+        const DB_API_URL = 'https://api.jsonbin.io/v3/b';
+        const USERS_BIN_ID = '6803e0c1ad19ca59f63d9a8b';
+        const REVIEWS_BIN_ID = '6803e0d68b02b10657f4d7e2';
+        const API_KEY = '$2a$10$XKjQJqZvYmNpRwLxTnUvOePqRsTuVwXyZaBcDeFgHiJkLnMNoEiSq';
         const CURRENT_USER_KEY = 'phone_compare_current_user';
 
-        // 获取所有用户
-        function getUsers() {
-            const data = localStorage.getItem(USERS_KEY);
-            return data ? JSON.parse(data) : [];
+        // ========== 数据库操作函数 ==========
+        async function fetchFromDB(binId) {
+            try {
+                const response = await fetch(`${DB_API_URL}/${binId}/latest`, {
+                    headers: { 'X-Master-Key': API_KEY }
+                });
+                if (!response.ok) return null;
+                const result = await response.json();
+                return result.record || [];
+            } catch (e) {
+                console.error('读取数据库失败:', e);
+                return null;
+            }
         }
 
-        // 保存用户列表
-        function saveUsers(users) {
-            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        async function saveToDB(binId, data) {
+            try {
+                const response = await fetch(`${DB_API_URL}/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': API_KEY
+                    },
+                    body: JSON.stringify(data)
+                });
+                return response.ok;
+            } catch (e) {
+                console.error('保存到数据库失败:', e);
+                return false;
+            }
+        }
+
+        // 获取所有用户（从在线数据库）
+        async function getUsers() {
+            const data = await fetchFromDB(USERS_BIN_ID);
+            return data !== null ? data : [];
+        }
+
+        // 保存用户列表（到在线数据库）
+        async function saveUsers(users) {
+            return saveToDB(USERS_BIN_ID, users);
         }
 
         // 获取当前登录用户
@@ -2707,9 +2743,9 @@
             document.getElementById('registerSuccess').style.display = 'none';
         }
 
-        // 执行注册
-        function doRegister() {
-            const users = getUsers();
+        // 执行注册（异步）
+        async function doRegister() {
+            const users = await getUsers();
             const newId = users.length + 1;
             const newPassword = generatePassword();
 
@@ -2720,7 +2756,7 @@
             };
 
             users.push(newUser);
-            saveUsers(users);
+            await saveUsers(users);
 
             // 显示注册成功信息
             document.getElementById('registerForm').style.display = 'none';
@@ -2749,8 +2785,8 @@
             });
         }
 
-        // 执行登录
-        function doLogin() {
+        // 执行登录（异步）
+        async function doLogin() {
             const name = document.getElementById('loginName').value.trim();
             const password = document.getElementById('loginPassword').value;
 
@@ -2760,7 +2796,7 @@
                 return;
             }
 
-            const users = getUsers();
+            const users = await getUsers();
             const user = users.find(u => u.name === name && u.password === password);
 
             if (user) {
@@ -2799,34 +2835,36 @@
         const RATINGS_KEY = 'phone_compare_ratings';
         const REVIEWS_PER_DAY = 2;
 
-        // 获取所有评价
-        function getAllRatings() {
-            const data = localStorage.getItem(RATINGS_KEY);
-            return data ? JSON.parse(data) : [];
+        // 获取所有评价（从在线数据库）
+        async function getAllRatings() {
+            const data = await fetchFromDB(REVIEWS_BIN_ID);
+            return data !== null ? data : [];
         }
 
-        // 保存评价列表
-        function saveRatings(ratings) {
-            localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings));
+        // 保存评价列表（到在线数据库）
+        async function saveRatings(ratings) {
+            // 过滤掉已删除的评价
+            const activeRatings = ratings.filter(r => !r.deleted);
+            return saveToDB(REVIEWS_BIN_ID, activeRatings);
         }
 
-        // 获取手机评价
-        function getPhoneRatings(phoneId) {
-            const ratings = getAllRatings();
+        // 获取手机评价（异步）
+        async function getPhoneRatings(phoneId) {
+            const ratings = await getAllRatings();
             return ratings.filter(r => r.phoneId === phoneId);
         }
 
-        // 计算平均评分
-        function getAverageRating(phoneId) {
-            const ratings = getPhoneRatings(phoneId);
+        // 计算平均评分（异步）
+        async function getAverageRating(phoneId) {
+            const ratings = await getPhoneRatings(phoneId);
             if (ratings.length === 0) return 0;
             const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
             return (sum / ratings.length).toFixed(1);
         }
 
-        // 获取用户今天的评价次数
-        function getUserTodayReviewCount(userId) {
-            const ratings = getAllRatings();
+        // 获取用户今天的评价次数（异步）
+        async function getUserTodayReviewCount(userId) {
+            const ratings = await getAllRatings();
             const today = new Date().toDateString();
             return ratings.filter(r =>
                 r.userId === userId &&
@@ -2835,8 +2873,8 @@
             ).length;
         }
 
-        // 切换到评价视图
-        function switchToRateView() {
+        // 切换到评价视图（异步）
+        async function switchToRateView() {
             const user = getCurrentUser();
             if (!user) {
                 showToastMessage('请先登录后再评价手机');
@@ -2848,7 +2886,7 @@
             document.getElementById('rating-detail-view').classList.add('hidden');
             document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
             document.querySelector('.view-tab:nth-child(2)').classList.add('active');
-            renderRatingGrid();
+            await renderRatingGrid();
         }
 
         // 切换到选择视图
@@ -2861,13 +2899,15 @@
             document.querySelector('.view-tab:nth-child(1)').classList.add('active');
         }
 
-        // 渲染评价网格
-        function renderRatingGrid() {
+        // 渲染评价网格（异步）
+        async function renderRatingGrid() {
             const ratingGrid = document.getElementById('ratingGrid');
-            ratingGrid.innerHTML = phonesData.map(phone => {
-                const avgRating = getAverageRating(phone.id);
-                const ratingCount = getPhoneRatings(phone.id).filter(r => !r.deleted).length;
-                return `
+            let html = '';
+            for (const phone of phonesData) {
+                const avgRating = await getAverageRating(phone.id);
+                const phoneRatings = await getPhoneRatings(phone.id);
+                const ratingCount = phoneRatings.filter(r => !r.deleted).length;
+                html += `
                     <div class="phone-card rating-card" data-id="${phone.id}" onclick="openRatingDetail(${phone.id})">
                         <img src="${phone.image}" alt="${phone.name}"
                              onerror="this.src='https://via.placeholder.com/200x200/764ba2/ffffff?text=${encodeURIComponent(phone.name)}'">
@@ -2881,14 +2921,15 @@
                         ${ratingCount > 0 ? `<p class="phone-brief"><i class="fas fa-comment"></i> ${ratingCount}条评价</p>` : ''}
                     </div>
                 `;
-            }).join('');
+            }
+            ratingGrid.innerHTML = html;
         }
 
-        // 打开评价详情
+        // 打开评价详情（异步）
         let currentRatingPhone = null;
         let currentSelectedRating = 0;
 
-        function openRatingDetail(phoneId) {
+        async function openRatingDetail(phoneId) {
             currentRatingPhone = phonesData.find(p => p.id === phoneId);
             currentSelectedRating = 0;
 
@@ -2898,8 +2939,9 @@
 
             // 渲染手机信息
             const phone = currentRatingPhone;
-            const avgRating = getAverageRating(phone.id);
-            const ratingCount = getPhoneRatings(phone.id).filter(r => !r.deleted).length;
+            const avgRating = await getAverageRating(phone.id);
+            const phoneRatings = await getPhoneRatings(phone.id);
+            const ratingCount = phoneRatings.filter(r => !r.deleted).length;
 
             document.getElementById('ratingPhoneInfo').innerHTML = `
                 <img src="${phone.image}" alt="${phone.name}"
@@ -2924,15 +2966,17 @@
             checkUserReviewStatus();
 
             // 渲染评论列表
-            renderRatingList();
+            await renderRatingList();
         }
 
         // 返回评价列表
-        function backToRatingList() {
+        // 返回评价列表（异步）
+        async function backToRatingList() {
             document.getElementById('selection-view').classList.add('hidden');
             document.getElementById('rating-view').classList.remove('hidden');
             document.getElementById('rating-detail-view').classList.add('hidden');
             currentRatingPhone = null;
+            await renderRatingGrid();
         }
 
         // 更新星星显示
@@ -3011,7 +3055,8 @@
         }
 
         // 提交评价
-        function submitRating() {
+        // 提交评价（异步）
+        async function submitRating() {
             const user = getCurrentUser();
             if (!user) {
                 showToastMessage('请先登录');
@@ -3029,14 +3074,14 @@
                 return;
             }
 
-            const todayCount = getUserTodayReviewCount(user.id);
+            const todayCount = await getUserTodayReviewCount(user.id);
             if (todayCount >= REVIEWS_PER_DAY) {
                 showToastMessage('今日评价次数已用完');
                 return;
             }
 
             // 检查该用户是否已对这部手机评价过（未删除）
-            const existingRatings = getAllRatings();
+            const existingRatings = await getAllRatings();
             const alreadyReviewed = existingRatings.some(r =>
                 r.phoneId === currentRatingPhone.id &&
                 r.userId === user.id &&
@@ -3080,12 +3125,14 @@
         }
 
         // 渲染评论列表
-        function renderRatingList() {
+        // 渲染评价列表（异步）
+        async function renderRatingList() {
             const user = getCurrentUser();
-            const ratings = getPhoneRatings(currentRatingPhone.id).filter(r => !r.deleted);
+            const ratings = await getPhoneRatings(currentRatingPhone.id);
+            const activeRatings = ratings.filter(r => !r.deleted);
             const container = document.getElementById('ratingListContent');
 
-            if (ratings.length === 0) {
+            if (activeRatings.length === 0) {
                 container.innerHTML = `
                     <div class="no-reviews">
                         <i class="fas fa-comment-slash"></i>
@@ -3095,7 +3142,7 @@
                 return;
             }
 
-            container.innerHTML = ratings.map(rating => {
+            container.innerHTML = activeRatings.map(rating => {
                 const stars = '★'.repeat(rating.rating) + '☆'.repeat(5 - rating.rating);
                 const date = new Date(rating.date).toLocaleDateString('zh-CN');
                 const isOwn = user && rating.userId === user.id;
@@ -3118,15 +3165,16 @@
             }).join('');
         }
 
-        // 删除（撤回）评价
-        function deleteRating(ratingId) {
+        // 删除（撤回）评价（异步）
+        async function deleteRating(ratingId) {
             if (!confirm('确定要撤回这条评价吗？')) return;
 
-            const ratings = getAllRatings();
+            const ratings = await getAllRatings();
             const ratingIndex = ratings.findIndex(r => r.id === ratingId);
             if (ratingIndex !== -1) {
-                ratings[ratingIndex].deleted = true;
-                saveRatings(ratings);
+                // 直接删除这条评价
+                const filteredRatings = ratings.filter(r => r.id !== ratingId);
+                await saveRatings(filteredRatings);
                 renderRatingList();
                 renderRatingGrid();
                 showToastMessage('评价已撤回');
