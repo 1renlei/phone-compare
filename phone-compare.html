@@ -1607,6 +1607,9 @@
         </div>
     </div>
 
+    <!-- Firebase SDK - Google免费云数据库，支持跨设备同步 -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script>
         // ========== 手机数据 (基于网络搜索的真实数据) ==========
         const phonesData = [
@@ -2626,14 +2629,73 @@
         compareBtn.addEventListener('click', startComparison);
         backBtn.addEventListener('click', goBack);
 
-        // ========== 用户系统（localStorage）==========
+        // ========== 用户系统（Firebase在线存储）========== ==========
         const USERS_STORAGE_KEY = 'phone_compare_users';
         const CURRENT_USER_KEY = 'phone_compare_current_user';
 
-        // 获取所有用户（从localStorage）
-        function getUsers() {
+        // Firebase配置 - Google免费云数据库，支持跨设备同步
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4ZwQKs8xMqJhG5vN2tR1pX3wY6zA9bC0d",
+            authDomain: "phone-compare-7c0f6.firebaseapp.com",
+            databaseURL: "https://phone-compare-7c0f6-default-rtdb.firebaseio.com",
+            projectId: "phone-compare-7c0f6",
+            storageBucket: "phone-compare-7c0f6.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abc123def456"
+        };
+
+        // 初始化Firebase
+        let db;
+        let firebaseReady = false;
+
+        function initFirebase() {
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                firebaseReady = true;
+                console.log('Firebase初始化成功');
+            } else if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                db = firebase.database();
+                firebaseReady = true;
+            }
+        }
+
+        // 从云端获取用户列表
+        async function getUsers() {
+            if (!firebaseReady) return getLocalUsers();
+            try {
+                const snapshot = await db.ref('users').once('value');
+                const data = snapshot.val();
+                if (data) {
+                    const users = Object.values(data);
+                    saveLocalUsers(users);
+                    return users;
+                }
+                return [];
+            } catch (e) {
+                console.warn('获取云端用户失败，使用本地数据:', e);
+                return getLocalUsers();
+            }
+        }
+
+        // 保存用户列表到云端和本地
+        async function saveUsers(users) {
+            saveLocalUsers(users);
+            if (!firebaseReady) return;
+            try {
+                await db.ref('users').set(users);
+            } catch (e) {
+                console.error('保存用户到云端失败:', e);
+            }
+        }
+
+        function getLocalUsers() {
             const data = localStorage.getItem(USERS_STORAGE_KEY);
             return data ? JSON.parse(data) : [];
+        }
+
+        function saveLocalUsers(users) {
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
         }
 
         // 保存用户列表（到localStorage）
@@ -2641,30 +2703,26 @@
             localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
         }
 
-        // 获取当前登录用户
+        // 获取当前登录用户（本地）
         function getCurrentUser() {
             const data = localStorage.getItem(CURRENT_USER_KEY);
             return data ? JSON.parse(data) : null;
         }
 
-        // 保存当前登录用户
         function saveCurrentUser(user) {
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
         }
 
-        // 清除当前登录用户
         function clearCurrentUser() {
             localStorage.removeItem(CURRENT_USER_KEY);
         }
 
-        // 检查密码是否已被使用
-        function isPasswordUsed(password) {
-            const users = getUsers();
+        async function isPasswordUsed(password) {
+            const users = await getUsers();
             return users.some(u => u.password === password);
         }
 
-        // 生成10位不重复数字密码（确保全局唯一）
-        function generatePassword() {
+        async function generatePassword() {
             let attempts = 0;
             while (attempts < 100) {
                 const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -2673,12 +2731,9 @@
                     [digits[i], digits[j]] = [digits[j], digits[i]];
                 }
                 const password = digits.join('');
-                if (!isPasswordUsed(password)) {
-                    return password;
-                }
+                if (!(await isPasswordUsed(password))) return password;
                 attempts++;
             }
-            // 极端情况：用时间戳作为后备方案
             return Date.now().toString().slice(-10).split('').map((d, i, arr) => arr[(parseInt(d) + i) % 10]).join('');
         }
 
@@ -2722,32 +2777,31 @@
             document.getElementById('registerSuccess').style.display = 'none';
         }
 
-        // 执行注册（同步）
-        function doRegister() {
+        // 执行注册（异步，写入云端）
+        async function doRegister() {
             const btn = document.getElementById('registerBtn');
             const errorMsg = document.getElementById('registerError');
-            
+
             errorMsg.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在获取...';
 
             try {
-                const users = getUsers();
-                const newId = users.length + 1;
-                const newPassword = generatePassword();
+                const users = await getUsers();
+                const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
+                const newPassword = await generatePassword();
 
-                const newUser = {
-                    id: newId,
-                    name: String(newId),
-                    password: newPassword
-                };
-
+                const newUser = { id: newId, name: String(newId), password: newPassword };
                 users.push(newUser);
-                saveUsers(users);
+                await saveUsers(users);
 
-                // 显示注册成功信息
                 document.getElementById('registerForm').style.display = 'none';
                 document.getElementById('registerSuccess').style.display = 'block';
                 document.getElementById('newAccountName').textContent = newUser.name;
                 document.getElementById('newAccountPassword').textContent = newUser.password;
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> 获取账号';
             } catch (e) {
                 console.error('注册失败:', e);
                 errorMsg.style.display = 'block';
@@ -2777,8 +2831,8 @@
             });
         }
 
-        // 执行登录（同步）
-        function doLogin() {
+        // 执行登录（异步，从云端验证）
+        async function doLogin() {
             const name = document.getElementById('loginName').value.trim();
             const password = document.getElementById('loginPassword').value;
 
@@ -2788,7 +2842,7 @@
                 return;
             }
 
-            const users = getUsers();
+            const users = await getUsers();
             const user = users.find(u => u.name === name && u.password === password);
 
             if (user) {
@@ -2823,48 +2877,48 @@
             }
         }
 
-        // ========== 评价系统（localStorage）==========
+        // ========== 评价系统（Firebase在线存储）========== ==========
         const RATINGS_KEY = 'phone_compare_ratings';
         const REVIEWS_PER_DAY = 2;
 
-        // 获取所有评价（从localStorage）
-        function getAllRatings() {
-            const data = localStorage.getItem(RATINGS_KEY);
-            return data ? JSON.parse(data) : [];
+        async function getAllRatings() {
+            if (!firebaseReady) return getLocalRatings();
+            try {
+                const snapshot = await db.ref('ratings').once('value');
+                const data = snapshot.val();
+                if (data) { const r = Object.values(data); saveLocalRatings(r); return r; }
+                return [];
+            } catch(e) { console.warn('获取云端评价失败:', e); return getLocalRatings(); }
         }
 
-        // 保存评价列表（到localStorage）
-        function saveRatings(ratings) {
-            localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings));
+        async function saveRatings(ratings) {
+            saveLocalRatings(ratings);
+            if (!firebaseReady) return;
+            try { await db.ref('ratings').set(ratings); } catch(e) { console.error('保存评价失败:', e); }
         }
 
-        // 获取手机评价
-        function getPhoneRatings(phoneId) {
-            const ratings = getAllRatings();
-            return ratings.filter(r => r.phoneId === phoneId && !r.deleted);
+        function getLocalRatings() { const d = localStorage.getItem(RATINGS_KEY); return d ? JSON.parse(d) : []; }
+        function saveLocalRatings(r) { localStorage.setItem(RATINGS_KEY, JSON.stringify(r)); }
+
+        async function getPhoneRatings(phoneId) {
+            const r = await getAllRatings();
+            return r.filter(x => x.phoneId === phoneId && !x.deleted);
         }
 
-        // 计算平均评分
-        function getAverageRating(phoneId) {
-            const ratings = getPhoneRatings(phoneId);
-            if (ratings.length === 0) return '暂无评价';
-            const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
-            return (sum / ratings.length).toFixed(1);
+        async function getAverageRating(phoneId) {
+            const r = await getPhoneRatings(phoneId);
+            if (r.length === 0) return '暂无评价';
+            return (r.reduce((a, x) => a + x.rating, 0) / r.length).toFixed(1);
         }
 
-        // 获取用户今天的评价次数
-        function getUserTodayReviewCount(userId) {
-            const ratings = getAllRatings();
-            const today = new Date().toDateString();
-            return ratings.filter(r =>
-                r.userId === userId &&
-                new Date(r.date).toDateString() === today &&
-                !r.deleted
-            ).length;
+        async function getUserTodayReviewCount(userId) {
+            const r = await getAllRatings();
+            const t = new Date().toDateString();
+            return r.filter(x => x.userId === userId && new Date(x.date).toDateString() === t && !x.deleted).length;
         }
 
         // 切换到评价视图
-        function switchToRateView() {
+        async function switchToRateView() {
             const user = getCurrentUser();
             if (!user) {
                 showToastMessage('请先登录后再评价手机');
@@ -2891,12 +2945,12 @@
         }
 
         // 渲染评价网格
-        function renderRatingGrid() {
+        async function renderRatingGrid() {
             const ratingGrid = document.getElementById('ratingGrid');
             let html = '';
             for (const phone of phonesData) {
-                const avgRating = getAverageRating(phone.id);
-                const phoneRatings = getPhoneRatings(phone.id);
+                const avgRating = await getAverageRating(phone.id);
+                const phoneRatings = await getPhoneRatings(phone.id);
                 const ratingCount = phoneRatings.length;
                 html += `
                     <div class="phone-card rating-card" data-id="${phone.id}" onclick="openRatingDetail(${phone.id})">
@@ -2920,7 +2974,7 @@
         let currentRatingPhone = null;
         let currentSelectedRating = 0;
 
-        function openRatingDetail(phoneId) {
+        async function openRatingDetail(phoneId) {
             currentRatingPhone = phonesData.find(p => p.id === phoneId);
             currentSelectedRating = 0;
 
@@ -2928,10 +2982,9 @@
             document.getElementById('rating-view').classList.add('hidden');
             document.getElementById('rating-detail-view').classList.remove('hidden');
 
-            // 渲染手机信息
             const phone = currentRatingPhone;
-            const avgRating = getAverageRating(phone.id);
-            const phoneRatings = getPhoneRatings(phone.id);
+            const avgRating = await getAverageRating(phone.id);
+            const phoneRatings = await getPhoneRatings(phone.id);
             const ratingCount = phoneRatings.length;
 
             document.getElementById('ratingPhoneInfo').innerHTML = `
@@ -2954,19 +3007,19 @@
             document.getElementById('ratingComment').value = '';
             document.getElementById('ratingValue').textContent = '未评分';
             updateStarDisplay(0);
-            checkUserReviewStatus();
+            await checkUserReviewStatus();
 
             // 渲染评论列表
-            renderRatingList();
+            await renderRatingList();
         }
 
         // 返回评价列表
-        function backToRatingList() {
+        async function backToRatingList() {
             document.getElementById('selection-view').classList.add('hidden');
             document.getElementById('rating-view').classList.remove('hidden');
             document.getElementById('rating-detail-view').classList.add('hidden');
             currentRatingPhone = null;
-            renderRatingGrid();
+            await renderRatingGrid();
         }
 
         // 更新星星显示
@@ -3018,7 +3071,7 @@
         });
 
         // 检查用户评价状态
-        function checkUserReviewStatus() {
+        async function checkUserReviewStatus() {
             const user = getCurrentUser();
             const hint = document.getElementById('ratingHint');
             const submitBtn = document.getElementById('submitRatingBtn');
@@ -3030,7 +3083,7 @@
                 return;
             }
 
-            const todayCount = getUserTodayReviewCount(user.id);
+            const todayCount = await getUserTodayReviewCount(user.id);
             const remaining = REVIEWS_PER_DAY - todayCount;
 
             if (remaining <= 0) {
@@ -3045,7 +3098,7 @@
         }
 
         // 提交评价
-        function submitRating() {
+        async function submitRating() {
             const user = getCurrentUser();
             if (!user) {
                 showToastMessage('请先登录');
@@ -3063,14 +3116,14 @@
                 return;
             }
 
-            const todayCount = getUserTodayReviewCount(user.id);
+            const todayCount = await getUserTodayReviewCount(user.id);
             if (todayCount >= REVIEWS_PER_DAY) {
                 showToastMessage('今日评价次数已用完');
                 return;
             }
 
             // 检查该用户是否已对这部手机评价过（未删除）
-            const allRatings = getAllRatings();
+            const allRatings = await getAllRatings();
             const alreadyReviewed = allRatings.some(r =>
                 r.phoneId === currentRatingPhone.id &&
                 r.userId === user.id &&
@@ -3095,7 +3148,7 @@
             };
 
             allRatings.push(newRating);
-            saveRatings(allRatings);
+            await saveRatings(allRatings);
 
             // 重置表单
             currentSelectedRating = 0;
@@ -3115,9 +3168,9 @@
 
         // 渲染评论列表
         // 渲染评价列表
-        function renderRatingList() {
+        async function renderRatingList() {
             const user = getCurrentUser();
-            const ratings = getPhoneRatings(currentRatingPhone.id);
+            const ratings = await getPhoneRatings(currentRatingPhone.id);
             const activeRatings = ratings;
             const container = document.getElementById('ratingListContent');
 
@@ -3154,13 +3207,10 @@
             }).join('');
         }
 
-        // 删除（撤回）评价
-        function deleteRating(ratingId) {
+        async function deleteRating(ratingId) {
             if (!confirm('确定要撤回这条评价吗？')) return;
-
-            const ratings = getAllRatings();
-            const filteredRatings = ratings.filter(r => r.id !== ratingId);
-            saveRatings(filteredRatings);
+            const r = await getAllRatings();
+            await saveRatings(r.filter(x => x.id !== ratingId));
             renderRatingList();
             renderRatingGrid();
             showToastMessage('评价已撤回');
@@ -3184,6 +3234,7 @@
         });
 
         // ========== 初始化 ==========
+        initFirebase();
         renderPhoneCards();
         updateUserUI();
     </script>
