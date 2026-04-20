@@ -3799,26 +3799,43 @@
             id: 0,
             name: '开发者',
             password: '0000000000',
-            isDev: true,
+            role: 'dev',
             createdAt: new Date(0).toISOString()
         };
 
-        function ensureDevAccount() {
+        const TESTER1_ACCOUNT = {
+            id: -1,
+            name: '试玩者1号',
+            password: '1000000000',
+            role: 'tester1',
+            createdAt: new Date(0).toISOString()
+        };
+
+        const TESTER2_ACCOUNT = {
+            id: -2,
+            name: '试玩者2号',
+            password: '2222222222',
+            role: 'tester2',
+            createdAt: new Date(0).toISOString()
+        };
+
+        const SPECIAL_ACCOUNTS = [DEV_ACCOUNT, TESTER1_ACCOUNT, TESTER2_ACCOUNT];
+
+        function ensureSpecialAccounts() {
             let users = getLocalUsers();
-            const existingIndex = users.findIndex(u => u.name === '开发者');
-            if (existingIndex >= 0) {
-                // 更新已有的开发者账号，确保带isDev标识
-                users[existingIndex] = { ...DEV_ACCOUNT, id: users[existingIndex].id };
-                saveUsers(users);
-            } else {
-                users.unshift(DEV_ACCOUNT);
-                saveUsers(users);
-                console.log('开发者账号已创建');
-            }
+            SPECIAL_ACCOUNTS.forEach(specialAcc => {
+                const existingIndex = users.findIndex(u => u.name === specialAcc.name);
+                if (existingIndex >= 0) {
+                    users[existingIndex] = { ...specialAcc, id: users[existingIndex].id || specialAcc.id };
+                } else {
+                    users.push(specialAcc);
+                }
+            });
+            saveUsers(users);
         }
 
-        // 页面加载时确保开发者账号存在
-        ensureDevAccount();
+        // 页面加载时确保特殊账号存在
+        ensureSpecialAccounts();
 
         function getLocalUsers() {
             const data = localStorage.getItem(USERS_STORAGE_KEY);
@@ -4002,10 +4019,28 @@
             if (user) {
                 userButtons.style.display = 'none';
                 userInfo.style.display = 'flex';
-                const displayName = user.isDev ? '开发者' : '用户' + user.name;
-                if (user.isDev) {
-                    loggedInUserEl.innerHTML = '<i class="fas fa-code"></i> ' + displayName;
-                    loggedInUserEl.style.color = '#ffd700';
+                let displayName, displayIcon, displayColor;
+                if (user.role === 'dev') {
+                    displayName = '开发者';
+                    displayIcon = 'fa-code';
+                    displayColor = '#ffd700'; // 金色
+                } else if (user.role === 'tester1') {
+                    displayName = '试玩者1号';
+                    displayIcon = 'fa-flask';
+                    displayColor = '#bf7fff'; // 紫色
+                } else if (user.role === 'tester2') {
+                    displayName = '试玩者2号';
+                    displayIcon = 'fa-flask';
+                    displayColor = '#bf7fff'; // 紫色
+                } else {
+                    displayName = '用户' + user.name;
+                    displayIcon = null;
+                    displayColor = '';
+                }
+
+                if (displayIcon) {
+                    loggedInUserEl.innerHTML = '<i class="fas ' + displayIcon + '"></i> ' + displayName;
+                    loggedInUserEl.style.color = displayColor;
                     loggedInUserEl.style.fontWeight = 'bold';
                 } else {
                     loggedInUserEl.textContent = displayName;
