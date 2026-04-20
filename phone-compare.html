@@ -3794,6 +3794,28 @@
         function getUsers() { return getLocalUsers(); }
         function saveUsers(u) { saveLocalUsers(u); }
 
+        // 初始化开发者账号（内部专属，页面加载时自动创建）
+        const DEV_ACCOUNT = {
+            id: 0,
+            name: '开发者',
+            password: '0000000000',
+            isDev: true,
+            createdAt: new Date(0).toISOString()
+        };
+
+        function ensureDevAccount() {
+            let users = getLocalUsers();
+            const exists = users.some(u => u.isDev);
+            if (!exists) {
+                users.unshift(DEV_ACCOUNT);  // 放到最前面
+                saveUsers(users);
+                console.log('开发者账号已初始化');
+            }
+        }
+
+        // 页面加载时确保开发者账号存在
+        ensureDevAccount();
+
         function getLocalUsers() {
             const data = localStorage.getItem(USERS_STORAGE_KEY);
             return data ? JSON.parse(data) : [];
@@ -3975,7 +3997,16 @@
             if (user) {
                 userButtons.style.display = 'none';
                 userInfo.style.display = 'flex';
-                document.getElementById('loggedInUser').textContent = '用户' + user.name;
+                const displayName = user.isDev ? '开发者' : '用户' + user.name;
+                if (user.isDev) {
+                    loggedInUserEl.innerHTML = '<i class="fas fa-code"></i> ' + displayName;
+                    loggedInUserEl.style.color = '#ffd700';
+                    loggedInUserEl.style.fontWeight = 'bold';
+                } else {
+                    loggedInUserEl.textContent = displayName;
+                    loggedInUserEl.style.color = '';
+                    loggedInUserEl.style.fontWeight = '';
+                }
                 document.getElementById('userPasswordDisplay').textContent = user.password || '';
             } else {
                 userButtons.style.display = 'flex';
