@@ -3864,7 +3864,17 @@
         // 获取当前登录用户（本地）
         function getCurrentUser() {
             const data = localStorage.getItem(CURRENT_USER_KEY);
-            return data ? JSON.parse(data) : null;
+            if (!data) return null;
+            let user = JSON.parse(data);
+            // 同步users数组中的role等信息（修复刷新后掉色BUG）
+            if (user && user.name) {
+                const users = getUsers();
+                const fresh = users.find(u => u.name === user.name);
+                if (fresh && fresh.role) {
+                    user.role = fresh.role;
+                }
+            }
+            return user;
         }
 
         function saveCurrentUser(user) {
