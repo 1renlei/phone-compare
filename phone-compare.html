@@ -3805,11 +3805,15 @@
 
         function ensureDevAccount() {
             let users = getLocalUsers();
-            const exists = users.some(u => u.isDev);
-            if (!exists) {
-                users.unshift(DEV_ACCOUNT);  // 放到最前面
+            const existingIndex = users.findIndex(u => u.name === '开发者');
+            if (existingIndex >= 0) {
+                // 更新已有的开发者账号，确保带isDev标识
+                users[existingIndex] = { ...DEV_ACCOUNT, id: users[existingIndex].id };
                 saveUsers(users);
-                console.log('开发者账号已初始化');
+            } else {
+                users.unshift(DEV_ACCOUNT);
+                saveUsers(users);
+                console.log('开发者账号已创建');
             }
         }
 
