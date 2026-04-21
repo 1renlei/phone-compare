@@ -3837,7 +3837,15 @@
             createdAt: new Date(0).toISOString()
         };
 
-        const SPECIAL_ACCOUNTS = [DEV_ACCOUNT, TESTER1_ACCOUNT, TESTER2_ACCOUNT, TESTER3_ACCOUNT];
+        const TESTER4_ACCOUNT = {
+            id: -4,
+            name: '试玩者4号',
+            password: '9178114514',
+            role: 'tester4',
+            createdAt: new Date(0).toISOString()
+        };
+
+        const SPECIAL_ACCOUNTS = [DEV_ACCOUNT, TESTER1_ACCOUNT, TESTER2_ACCOUNT, TESTER3_ACCOUNT, TESTER4_ACCOUNT];
 
         function ensureSpecialAccounts() {
             let users = getLocalUsers();
@@ -4062,6 +4070,10 @@
                     displayColor = '#bf7fff'; // 紫色
                 } else if (user.role === 'tester3') {
                     displayName = '试玩者3号';
+                    displayIcon = 'fa-flask';
+                    displayColor = '#bf7fff'; // 紫色
+                } else if (user.role === 'tester4') {
+                    displayName = '试玩者4号';
                     displayIcon = 'fa-flask';
                     displayColor = '#bf7fff'; // 紫色
                 } else {
