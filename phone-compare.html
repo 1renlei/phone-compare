@@ -613,6 +613,41 @@
             color: var(--accent-cyan);
         }
 
+        .phone-price {
+            padding: 8px 15px;
+            font-size: 0.85rem;
+            color: var(--success-color);
+            font-weight: 600;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 8px;
+        }
+
+        .phone-price.second-hand {
+            color: #f59e0b;
+        }
+
+        .phone-price i {
+            margin-right: 5px;
+        }
+
+        .discontinued-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .phone-image-container {
+            position: relative;
+        }
+
         /* ========== 操作按钮区域 ========== */
         .action-bar {
             text-align: center;
@@ -1473,6 +1508,85 @@
             opacity: 0.3;
         }
 
+        /* ========== 搜索框样式 ========== */
+        .search-container {
+            max-width: 600px;
+            margin: 20px auto 30px;
+            position: relative;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 15px 50px 15px 50px;
+            font-size: 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            color: white;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-box:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .search-box::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            pointer-events: none;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-secondary);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .search-clear:hover {
+            background: rgba(255, 107, 107, 0.3);
+            color: #ff6b6b;
+        }
+
+        .search-clear.show {
+            display: flex;
+        }
+
+        .search-result-count {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .search-result-count span {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
         /* 隐藏类 */
         .hidden {
             display: none !important;
@@ -1585,6 +1699,16 @@
 
         <!-- 选择视图 -->
         <div id="selection-view">
+            <!-- 搜索框 -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-box" id="searchBox" placeholder="搜索手机名称或品牌...">
+                <button class="search-clear" id="searchClear" onclick="clearSearch()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="search-result-count" id="searchResultCount"></div>
+            </div>
+
             <div class="phone-grid" id="phoneGrid">
                 <!-- 手机卡片将通过JavaScript动态生成 -->
             </div>
@@ -1694,6 +1818,8 @@
                 screenDetail: "Super Retina XDR OLED，120Hz ProMotion",
                 valueScore: 8.8,
                 price: "¥8999起",
+                discontinued: false,
+                secondHandPrice: "",
                 ipRating: "IP68/IP68",
                 os: "iOS 19",
                 camera: "4800万主摄(f/1.78) + 4800万超广角 + 1200万5倍长焦 / 前置1200万",
@@ -2288,7 +2414,8 @@
                 screen: "3.5英寸",
                 screenDetail: "960×640 Retina显示屏，326PPI",
                 valueScore: 7.0,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "¥150起",
                 ipRating: "IP53/(无)",
                 os: "iOS 9(最终版)",
                 camera: "800万像素(f/2.4) / 前置30万像素",
@@ -2307,6 +2434,7 @@
                 screenDetail: "1136×640 Retina，326PPI",
                 valueScore: 7.5,
                 price: "二手约¥200",
+                secondHandPrice: "¥200",
                 ipRating: "IP67/(无)",
                 os: "iOS 12(最终版)",
                 camera: "800万像素(f/2.2) / 前置120万像素",
@@ -2325,6 +2453,7 @@
                 screenDetail: "1334×750 Retina HD，3D Touch",
                 valueScore: 7.8,
                 price: "二手约¥350",
+                secondHandPrice: "¥350",
                 ipRating: "IP67/(无)",
                 os: "iOS 15(最终版)",
                 camera: "1200万像素(f/2.2) / 前置500万像素",
@@ -2343,6 +2472,7 @@
                 screenDetail: "1334×750 Retina HD，广色域显示",
                 valueScore: 7.5,
                 price: "二手约¥400",
+                secondHandPrice: "¥400",
                 ipRating: "IP67/IP67",
                 os: "iOS 15(最终版)",
                 camera: "1200万像素(f/1.8) OIS光学防抖 / 前置700万像素",
@@ -2361,6 +2491,7 @@
                 screenDetail: "1920×1080 Retina HD，3D Touch",
                 valueScore: 8.0,
                 price: "二手约¥600",
+                secondHandPrice: "¥600",
                 ipRating: "IP67/IP67",
                 os: "iOS 16(最终版)",
                 camera: "1200万广角(f/1.8)+1200万长焦(f/2.8)双摄 / 前置700万像素",
@@ -2379,6 +2510,7 @@
                 screenDetail: "2436×1125 OLED Super Retina，刘海屏设计",
                 valueScore: 8.2,
                 price: "二手约¥900",
+                secondHandPrice: "¥900",
                 ipRating: "IP67/IP67",
                 os: "iOS 17(最终版)",
                 camera: "1200万广角(f/1.8)+1200万长焦(f/2.4)双摄 / 前置700万像素(TrueDepth)",
@@ -2397,6 +2529,7 @@
                 screenDetail: "2436×1126 OLED Super Retina HDR",
                 valueScore: 8.3,
                 price: "二手约¥1100",
+                secondHandPrice: "¥1100",
                 ipRating: "IP68/IP68",
                 os: "iOS 18(最终版)",
                 camera: "1200万广角(f/1.8)+1200万长焦(f/2.4)双摄OIS / 前置700万像素",
@@ -2415,6 +2548,7 @@
                 screenDetail: "1792×828 Liquid Retina LCD，326PPI",
                 valueScore: 8.4,
                 price: "二手约¥1000",
+                secondHandPrice: "¥1000",
                 ipRating: "IP67/IP67",
                 os: "iOS 18(最终版)",
                 camera: "1200万像素(f/1.8)广角单摄 / 前置700万像素(TrueDepth)",
@@ -2433,6 +2567,7 @@
                 screenDetail: "2688×1242 OLED Super Retina XDR",
                 valueScore: 8.6,
                 price: "二手约¥1800",
+                secondHandPrice: "¥1800",
                 ipRating: "IP68/IP68",
                 os: "iOS 18(最终版)",
                 camera: "1200万超广角+1200万广角+1200万长焦三摄 / 前置1200万像素",
@@ -2451,6 +2586,7 @@
                 screenDetail: "2778×1284 OLED Super Retina XDR",
                 valueScore: 8.7,
                 price: "二手约¥2500",
+                secondHandPrice: "¥2500",
                 ipRating: "IP68/IP68",
                 os: "iOS 18(最终版)",
                 camera: "1200万超广角+1200万广角(f/1.6)+1200万长焦(2.5x) / 前置1200万",
@@ -2469,6 +2605,7 @@
                 screenDetail: "2778×1284 OLED ProMotion，10-120Hz LTPO",
                 valueScore: 9.0,
                 price: "二手约¥3200",
+                secondHandPrice: "¥3200",
                 ipRating: "IP68/IP68",
                 os: "iOS 19(最新)",
                 camera: "1200万超广角+1200万广角(f/1.5)+1200万长焦(3x) / 前置1200万",
@@ -2487,6 +2624,7 @@
                 screenDetail: "2796×1290 OLED ProMotion，灵动岛挖孔屏",
                 valueScore: 9.2,
                 price: "二手约¥4500",
+                secondHandPrice: "¥4500",
                 ipRating: "IP68/IP68",
                 os: "iOS 19(最新)",
                 camera: "4800万主摄(f/1.78)+1200万超广角+1200万长焦(3x) / 前置1200万",
@@ -2558,7 +2696,8 @@
                 screen: "4英寸",
                 screenDetail: "1136×640 Retina显示屏",
                 valueScore: 6.5,
-                price: "已停产",
+                secondHandPrice: "价格面议",
+                price: "",
                 ipRating: "IP67/(无)",
                 os: "iOS 15(最终版)",
                 camera: "1200万像素(f/2.2) / 前置120万像素",
@@ -2577,6 +2716,7 @@
                 screenDetail: "1334×750 Retina HD",
                 valueScore: 7.5,
                 price: "二手约¥600",
+                secondHandPrice: "¥600",
                 ipRating: "IP67/IP67",
                 os: "iOS 18(最终版)",
                 camera: "1200万像素(f/1.8) / 前置700万像素",
@@ -2637,7 +2777,6 @@
                 image: "https://i.postimg.cc/QxXDB5v6/424f13473735c49d409309976440ea6e.jpg",
                 color: "#94a3b8"
             },
-
             // ========== 华为Nova系列（ID53-ID67） ==========
             {
                 id: 53,
@@ -2649,8 +2788,9 @@
                电池Detail: "不支持快充",
                 screen: "5.0英寸",
                 screenDetail: "1920×1080 FHD IPS",
+                secondHandPrice: "价格面议",
                 valueScore: 6.5,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "EMUI 4(安卓6)",
                 camera: "1200万像素(f/2.2) / 前置800万像素",
@@ -2666,9 +2806,10 @@
                 battery: "2950 mAh",
                电池Detail: "不支持快充",
                 screen: "5.0英寸",
+                secondHandPrice: "价格面议",
                 screenDetail: "1920×1080 FHD IPS",
                 valueScore: 6.8,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "EMUI 5(安卓7)",
                 camera: "1200万+200万双摄 / 前置2000万像素",
@@ -2683,10 +2824,11 @@
                 chipDetail: "旗舰芯片下放，NPU神经网络处理单元",
                 battery: "3750 mAh",
                电池Detail: "9V/2A快充",
+                secondHandPrice: "价格面议",
                 screen: "6.3英寸",
                 screenDetail: "2340×1080 FHD+ IPS",
                 valueScore: 7.5,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "EMUI 8(安卓8)",
                 camera: "2400万+1600万双摄 / 前置2400万像素",
@@ -2700,11 +2842,12 @@
                 chip: "麒麟970",
                 chipDetail: "极点全面屏(打孔屏)，后置三摄",
                 battery: "3750 mAh",
+                secondHandPrice: "价格面议",
                电池Detail: "18W快充",
                 screen: "6.4英寸",
                 screenDetail: "2310×1080 FHD+ LCD打孔屏",
                 valueScore: 7.8,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "EMUI 9(安卓9)",
                 camera: "2000万超广角+2000万主摄+200万虚化 / 前置2500万像素",
@@ -2717,12 +2860,13 @@
                 brand: "华为",
                 chip: "麒麟810",
                 chipDetail: "7nm中端神U，自研达芬奇架构NPU，40W超级快充",
+                secondHandPrice: "价格面议",
                 battery: "3500 mAh",
                电池Detail: "40W超级快充",
                 screen: "6.4英寸",
                 screenDetail: "2310×1080 FHD+ LCD水滴屏",
                 valueScore: 8.0,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "EMUI 9.1(安卓9)",
                 camera: "4800万超清+1600万超广角+200万微距 / 前置3200万像素",
@@ -2752,13 +2896,14 @@
                 name: "华为nova 7",
                 brand: "华为",
                 chip: "麒麟985",
+                secondHandPrice: "价格面议",
                 chipDetail: "5G SoC集成基带，前置眼部追焦",
                 battery: "4000 mAh",
                电池Detail: "40W超级快充",
                 screen: "6.53英寸",
                 screenDetail: "2400×1080 FHD+ OLED曲面屏",
                 valueScore: 8.3,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "HarmonyOS(等效于安卓10)",
                 camera: "6400万超感光+800万超广角+800万长焦(3x) / 前置3200万自动对焦",
@@ -2769,6 +2914,7 @@
                 id: 59,
                 name: "华为nova 8",
                 brand: "华为",
+                secondHandPrice: "价格面议",
                 chip: "麒麟985",
                 chipDetail: "66W超级快充，120Hz高刷OLED",
                 battery: "3800 mAh",
@@ -2776,7 +2922,7 @@
                 screen: "6.72英寸",
                 screenDetail: "2676×1236 FHD+ OLED 90Hz",
                 valueScore: 8.5,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "HarmonyOS 2(等效于安卓11)",
                 camera: "6400万主摄+800万超广角+200万微距 / 前置6000万超广角",
@@ -2786,6 +2932,7 @@
             {
                 id: 60,
                 name: "华为nova 9",
+                secondHandPrice: "价格面议",
                 brand: "华为",
                 chip: "骁龙778G 4G",
                 chipDetail: "星耀环设计，100W超级快充，RYYB传感器",
@@ -2794,7 +2941,7 @@
                 screen: "6.57英寸",
                 screenDetail: "2340×1080 FHD+ OLED 120Hz",
                 valueScore: 8.6,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "HarmonyOS 2(等效于安卓11)",
                 camera: "5000万RYYB主摄+800万超广角+200万景深+200万微距 / 前置3200万",
@@ -2803,6 +2950,7 @@
             },
             {
                 id: 61,
+                secondHandPrice: "价格面议",
                 name: "华为nova 10",
                 brand: "华为",
                 chip: "骁龙778G 4G",
@@ -2812,7 +2960,7 @@
                 screen: "6.67英寸",
                 screenDetail: "2400×1080 FHD+ OLED 120Hz",
                 valueScore: 8.5,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "HarmonyOS 2(等效于安卓11)",
                 camera: "5000万RYYB主摄+800万超广角景深二合一+200万微距 / 前置6000万超广角",
@@ -2820,6 +2968,7 @@
                 color: "#ef4444"
             },
             {
+                secondHandPrice: "价格面议",
                 id: 62,
                 name: "华为nova 11",
                 brand: "华为",
@@ -2830,7 +2979,7 @@
                 screen: "6.7英寸",
                 screenDetail: "2412×1084 FHD+ OLED 120Hz",
                 valueScore: 8.6,
-                price: "已停产",
+                price: "",
                 ipRating: "(无)/(无)",
                 os: "HarmonyOS 3(等效于安卓12)",
                 camera: "5000万RYYB可变光圈+800万超广角微距 / 前置6000万+800万超广角人像",
@@ -2848,7 +2997,8 @@
                 screen: "6.88英寸",
                 screenDetail: "2700×1224 FHD+ OLED 120Hz",
                 valueScore: 8.7,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "价格面议",
                 ipRating: "(无)/(无)",
                 os: "HarmonyOS 4(等效于安卓13)",
                 camera: "5000万物理可变光圈+800万超广角微距 / 前置6000万超广角",
@@ -2940,7 +3090,8 @@
                 screen: "6.78英寸",
                 screenDetail: "2800×1260 AMOLED 120Hz，京东方Q9发光材料",
                 valueScore: 8.7,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "价格面议",
                 ipRating: "IP64/(无)",
                 os: "OriginOS 3(安卓13)",
                 camera: "5000万IMX866主摄(f/1.75)+1200万IMX663超广角(f/2.0)+1200万IMX663长焦(f/2.0)(2x) / 前置3200万",
@@ -2958,7 +3109,8 @@
                 screen: "6.78英寸",
                 screenDetail: "2800×1260 AMOLED 120Hz 8T LTPO，3000nit峰值亮度",
                 valueScore: 9.0,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "价格面议",
                 ipRating: "IP69/IP69",
                 os: "OriginOS 4(安卓14)",
                 camera: "5000万IMX920主摄(f/1.57)OIS+5000万JN1超广角+5000万OV64B长焦(3x)OIS潜望 / 前置3200万",
@@ -2981,9 +3133,9 @@
                 os: "OriginOS 6(安卓16)",
                 camera: "两亿像素LYT-999主摄(f/1.6)OIS+5000万超广角+2亿像素潜望长焦(10x)OIS / 前置5000万",
                 image: "https://i.postimg.cc/hvGqYR8G/e327ee9835979218d040f29661aa1282.jpg",
-                color: "#06b6d4"
+                color: "#06b6d4",
+                secondHandPrice: "价格面议",
             },
-
             // ========== 小米Ultra系列（ID71-ID74） ==========
             {
                 id: 71,
@@ -2996,7 +3148,8 @@
                 screen: "6.67英寸",
                 screenDetail: "2340×1080 AMOLED曲面 120Hz",
                 valueScore: 8.5,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "价格面议",
                 ipRating: "IP68/IP68",
                 os: "MIUI 12(安卓10)",
                 camera: "4800万主摄(f/1.95)+1200万超广角+4800万长焦(5x)OIS+2000万超长焦(120x) / 前置2000万",
@@ -3014,7 +3167,8 @@
                 screen: "6.81英寸",
                 screenDetail: "3200×1440 2K AMOLED E4 120Hz LTPO",
                 valueScore: 8.7,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "价格面议",
                 ipRating: "IP68/IP68",
                 os: "MIUI 12(安卓11)",
                 camera: "5000万GN2主摄(f/1.95)OIS+4800万IMX586超广角+4800万IMX586长焦(5x)OIS / 前置2000万",
@@ -3032,8 +3186,8 @@
                 screen: "6.73英寸",
                 screenDetail: "3200×1440 2K AMOLED E5 120Hz LTPO 2.0",
                 valueScore: 9.0,
-                price: "已停产",
-                ipRating: "IP68/IP68",
+                price: "",
+                secondHandPrice: "价格面议",
                 os: "MIUI 13(安卓12)",
                 camera: "5000万IMX989一英寸主摄(f/1.9)OIS徕卡+4800万IMX586超广角+4800万IMX586长焦(5x)OIS / 前置3200万",
                 image: "https://i.postimg.cc/bJ37kV74/a3698ff82de418e377b4631e23324325.jpg",
@@ -3050,14 +3204,14 @@
                 screen: "6.73英寸",
                 screenDetail: "3200×1440 2K AMOLED C7 120Hz LTPO 2.0，2600nit峰值亮度",
                 valueScore: 9.2,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "价格面议",
                 ipRating: "IP68/IP68",
                 os: "HyperOS(安卓13)",
                 camera: "5000万IMX989一英寸可变光圈(f/1.63-f/4.0)OIS徕卡+5000万IMX858超广角+5000万IMX858长焦(3.2x)OIS+5000万IMX858潜望(5x)OIS / 前置3200万",
                 image: "https://i.postimg.cc/7YTRZLLw/666227f8b79467b58843adef4ba2381f.jpg",
                 color: "#ff6900"
             },
-
             // ========== vivo Y系列（ID75-ID76） ==========
             {
                 id: 75,
@@ -3091,11 +3245,11 @@
                 price: "¥1999起",
                 ipRating: "IP54+(防尘防水溅)/IP54+",
                 os: "OriginOS 4(安卓14)",
+                secondHandPrice: "价格面议",
                 camera: "5000万索尼LYT600主摄(f/1.79)OIS+200万虚化 / 前置3200万",
                 image: "https://i.postimg.cc/L6LM0DLg/fe9485af6cd87598ad255805bfbc8dba.jpg",
                 color: "#06b6d4"
             },
-
             // ========== OPPO A系列（ID77-ID79） ==========
             {
                 id: 77,
@@ -3108,7 +3262,8 @@
                 screen: "6.51英寸",
                 screenDetail: "1600×720 HD+ LCD水滴屏",
                 valueScore: 6.0,
-                price: "已停产",
+                price: "",
+                secondHandPrice: "价格面议",
                 ipRating: "(无)/(无)",
                 os: "ColorOS 11(安卓11)",
                 camera: "1300万像素(f/2.2)+200万景深 / 前置800万像素",
@@ -3354,7 +3509,7 @@
         const MAX_SELECTION = 2;
 
         // ========== DOM 元素 ==========
-        const phoneGrid = document.getElementById('phoneGrid');
+        let phoneGrid = document.getElementById('phoneGrid');
         const selectedCountEl = document.getElementById('selectedCount');
         const compareBtn = document.getElementById('compareBtn');
         const selectionView = document.getElementById('selection-view');
@@ -3365,8 +3520,41 @@
         const toast = document.getElementById('toast');
 
         // ========== 渲染手机卡片 ==========
-        function renderPhoneCards() {
-            phoneGrid.innerHTML = phonesData.map(phone => `
+        function renderPhoneCards(phones = phonesData) {
+            // 调试信息
+            console.log('renderPhoneCards 被调用');
+            console.log('phones 类型:', typeof phones);
+            console.log('phones 长度:', phones?.length);
+            console.log('phoneGrid 存在:', !!phoneGrid);
+            if (!phoneGrid) {
+                console.error('错误：phoneGrid 元素未找到');
+                const grid = document.getElementById('phoneGrid');
+                if (!grid) {
+                    console.error('无法找到 phoneGrid 元素，停止渲染');
+                    return;
+                }
+                phoneGrid = grid;
+            }
+
+            // 确保 phones 是数组
+            if (!Array.isArray(phones)) {
+                console.error('phones 不是数组，使用 phonesData');
+                phones = phonesData || [];
+            }
+
+            phoneGrid.innerHTML = phones.map(phone => {
+                // 判断价格显示
+                let priceDisplay = '';
+                let priceLabel = '';
+                if (phone.discontinued) {
+                    priceLabel = '二手';
+                    priceDisplay = phone.secondHandPrice || '暂无报价';
+                } else {
+                    priceLabel = '价格';
+                    priceDisplay = phone.price || '暂无报价';
+                }
+
+                return `
                 <div class="phone-card" data-id="${phone.id}" onclick="toggleSelection(${phone.id})">
                     <div class="check-badge">
                         <i class="fas fa-check"></i>
@@ -3381,8 +3569,73 @@
                         <span><i class="fas fa-microchip"></i> ${phone.chip.split(' ')[0]}</span>
                         <span><i class="fas fa-battery-full"></i> ${phone.battery.split(' ')[0]}</span>
                     </div>
+                    <div class="phone-price">
+                        <i class="fas fa-tag"></i> ${priceLabel}：${priceDisplay}
+                    </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
+        }
+
+        // ========== 搜索过滤手机 ==========
+        function filterPhones() {
+            const searchBox = document.getElementById('searchBox');
+            const searchClear = document.getElementById('searchClear');
+            const searchResultCount = document.getElementById('searchResultCount');
+            const keyword = searchBox.value.trim().toLowerCase();
+
+            // 显示/隐藏清除按钮
+            if (keyword.length > 0) {
+                searchClear.classList.add('show');
+            } else {
+                searchClear.classList.remove('show');
+            }
+
+            // 过滤手机数据
+            if (keyword === '') {
+                renderPhoneCards(phonesData);
+                searchResultCount.innerHTML = '';
+                // 恢复所有卡片的选择状态
+                selectedPhones.forEach(phone => {
+                    const card = document.querySelector(`.phone-card[data-id="${phone.id}"]`);
+                    if (card) card.classList.add('selected');
+                });
+                return;
+            }
+
+            const filtered = phonesData.filter(phone =>
+                phone.name.toLowerCase().includes(keyword) ||
+                phone.brand.toLowerCase().includes(keyword)
+            );
+
+            renderPhoneCards(filtered);
+            searchResultCount.innerHTML = `找到 <span>${filtered.length}</span> 部手机`;
+
+            // 为过滤后的卡片恢复选择状态
+            selectedPhones.forEach(phone => {
+                const card = document.querySelector(`.phone-card[data-id="${phone.id}"]`);
+                if (card) card.classList.add('selected');
+            });
+        }
+
+        // ========== 清除搜索 ==========
+        function clearSearch() {
+            const searchBox = document.getElementById('searchBox');
+            const searchClear = document.getElementById('searchClear');
+            const searchResultCount = document.getElementById('searchResultCount');
+
+            searchBox.value = '';
+            searchClear.classList.remove('show');
+            searchResultCount.innerHTML = '';
+            renderPhoneCards(phonesData);
+
+            // 恢复所有卡片的选择状态
+            selectedPhones.forEach(phone => {
+                const card = document.querySelector(`.phone-card[data-id="${phone.id}"]`);
+                if (card) card.classList.add('selected');
+            });
+
+            searchBox.focus();
         }
 
         // ========== 切换选择状态 ==========
@@ -3435,6 +3688,16 @@
                 renderAdvice();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 300);
+        }
+
+        // ========== 获取价格显示HTML ==========
+        function getPriceHTML(phone) {
+            if (phone.discontinued) {
+                const price = phone.secondHandPrice || '暂无报价';
+                return `<div class="spec-value" style="color: #f59e0b;">二手：${price}</div>`;
+            } else {
+                return `<div class="spec-value" style="color: var(--success-color);">${phone.price || '暂无报价'}</div>`;
+            }
         }
 
         // ========== 渲染对比视图 ==========
@@ -3533,7 +3796,7 @@
                     <div class="spec-item" style="background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);">
                         <div class="spec-info">
                             <div class="spec-label">参考价格</div>
-                            <div class="spec-value" style="color: var(--success-color);">${phone1.price}</div>
+                            ${getPriceHTML(phone1)}
                         </div>
                     </div>
                 </div>
@@ -3629,7 +3892,7 @@
                     <div class="spec-item" style="background: rgba(0,212,170,0.1); border: 1px solid rgba(0,212,170,0.3);">
                         <div class="spec-info">
                             <div class="spec-label">参考价格</div>
-                            <div class="spec-value" style="color: var(--success-color);">${phone2.price}</div>
+                            ${getPriceHTML(phone2)}
                         </div>
                     </div>
                 </div>
@@ -3647,8 +3910,16 @@
             const score1 = phone1.valueScore;
             const score2 = phone2.valueScore;
 
-            const price1 = parseInt(phone1.price.replace(/[^0-9]/g, ''));
-            const price2 = parseInt(phone2.price.replace(/[^0-9]/g, ''));
+            // 获取价格（如果停产则使用二手价格）
+            const getPrice = (phone) => {
+                if (phone.discontinued) {
+                    return parseInt((phone.secondHandPrice || '0').replace(/[^0-9]/g, '')) || 0;
+                }
+                return parseInt((phone.price || '0').replace(/[^0-9]/g, '')) || 0;
+            };
+
+            const price1 = getPrice(phone1);
+            const price2 = getPrice(phone2);
 
             const adviceItems = [];
 
@@ -3741,6 +4012,23 @@
                 });
             }
 
+            // 停产提示
+            if (phone1.discontinued || phone2.discontinued) {
+                let discontinueContent = '';
+                if (phone1.discontinued && phone2.discontinued) {
+                    discontinueContent = `<span class="advice-winner">两部手机均已停产</span>，只能购买二手。建议仔细检查手机状况，注意电池健康度。`;
+                } else if (phone1.discontinued) {
+                    discontinueContent = `<span class="advice-winner">${phone1.name}</span> 已停产，只能购买二手；${phone2.name} 仍在售，可购买全新机。`;
+                } else {
+                    discontinueContent = `<span class="advice-winner">${phone2.name}</span> 已停产，只能购买二手；${phone1.name} 仍在售，可购买全新机。`;
+                }
+                adviceItems.push({
+                    type: 'value',
+                    title: '<i class="fas fa-exclamation-triangle"></i> 购买提示',
+                    content: discontinueContent
+                });
+            }
+
             // 渲染建议卡片
             adviceGrid.innerHTML = adviceItems.map(item => `
                 <div class="advice-card ${item.type}">
@@ -3789,14 +4077,19 @@
         let firebaseReady = false;
 
         function initFirebase() {
-            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.database();
-                firebaseReady = true;
-                console.log('Firebase初始化成功');
-            } else if (typeof firebase !== 'undefined' && firebase.apps.length) {
-                db = firebase.database();
-                firebaseReady = true;
+            try {
+                if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    db = firebase.database();
+                    firebaseReady = true;
+                    console.log('Firebase初始化成功');
+                } else if (typeof firebase !== 'undefined' && firebase.apps.length) {
+                    db = firebase.database();
+                    firebaseReady = true;
+                }
+            } catch (e) {
+                console.warn('Firebase初始化失败，使用本地模式:', e.message);
+                firebaseReady = false;
             }
         }
 
@@ -4465,6 +4758,13 @@
         initFirebase();
         renderPhoneCards();
         updateUserUI();
+
+        // 搜索框事件监听
+        const searchBox = document.getElementById('searchBox');
+        searchBox.addEventListener('input', filterPhones);
+        searchBox.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') filterPhones();
+        });
     </script>
 </body>
 </html>
